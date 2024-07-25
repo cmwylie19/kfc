@@ -1,6 +1,6 @@
 {
-  "name": "kubernetes-fluent-client",
-  "version": "0.0.0-development",
+  "name": "cw-kfc",
+  "version": "2.0.0",
   "description": "A @kubernetes/client-node fluent API wrapper that leverages K8s Server Side Apply.",
   "bin": "./dist/cli.js",
   "main": "dist/index.js",
@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/defenseunicorns/kubernetes-fluent-client.git"
+    "url": "git+https://github.com/cmwylie19/kfc.git"
   },
   "keywords": [
     "kubernetes",
@@ -31,9 +31,9 @@
   "author": "Defense Unicorns",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/defenseunicorns/kubernetes-fluent-client/issues"
+    "url": "https://github.com/cmwylie19/kfc/issues"
   },
-  "homepage": "https://github.com/defenseunicorns/kubernetes-fluent-client#readme",
+  "homepage": "https://github.com/cmwylie19/kfc#readme",
   "dependencies": {
     "@kubernetes/client-node": "1.0.0-rc6",
     "byline": "5.0.0",

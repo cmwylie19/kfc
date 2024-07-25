@@ -34,6 +34,12 @@ export enum WatchEvent {
   LIST = "list",
   /** List operation error */
   LIST_ERROR = "list_error",
+  /** Cache Misses */
+  CACHE_MISS = "cache_miss",
+  //** Increment retry count */
+  INC_RETRY = "inc_retry",
+  /** Initialize a relist window */
+  INIT_CACHE_MISS = "init_cache_miss",
 }
 
 /** Configuration for the watch function. */
@@ -58,6 +64,7 @@ export class Watcher<T extends GenericClass> {
   #filters: Filters;
   #callback: WatchAction<T>;
   #watchCfg: WatchCfg;
+  #latestRelistInterval: string = "";
 
   // Track the last time data was received
   #lastSeenTime = NONE;
@@ -119,7 +126,14 @@ export class Watcher<T extends GenericClass> {
     const jitter = Math.floor(Math.random() * 1000);
 
     // Check every relist interval for cache staleness
-    this.$relistTimer = setInterval(this.#list, watchCfg.relistIntervalSec * 1000 + jitter);
+    this.$relistTimer = setInterval(
+      () => {
+        this.#list;
+        this.#latestRelistInterval = new Date().toISOString();
+        this.#events.emit(WatchEvent.INIT_CACHE_MISS, this.#latestRelistInterval);
+      },
+      watchCfg.relistIntervalSec * 1000 + jitter,
+    );
 
     // Rebuild the watch every retry delay interval
     this.#resyncTimer = setInterval(this.#checkResync, watchCfg.retryDelaySec * 1000 + jitter);
@@ -267,6 +281,7 @@ export class Watcher<T extends GenericClass> {
 
         // If the item does not exist, it is new and should be added
         if (!alreadyExists) {
+          this.#events.emit(WatchEvent.CACHE_MISS, this.#latestRelistInterval);
           // Send added event. Use void here because we don't care about the result (no consequences here if it fails)
           void this.#process(item, WatchPhase.Added);
           continue;
@@ -278,6 +293,7 @@ export class Watcher<T extends GenericClass> {
 
         // Check if the resource version is newer than the cached version
         if (itemRV > cachedRV) {
+          this.#events.emit(WatchEvent.CACHE_MISS, this.#latestRelistInterval);
           // Send a modified event if the resource version has changed
           void this.#process(item, WatchPhase.Modified);
         }
@@ -291,6 +307,7 @@ export class Watcher<T extends GenericClass> {
       } else {
         // Otherwise, process the removed items
         for (const item of removedItems.values()) {
+          this.#events.emit(WatchEvent.CACHE_MISS, this.#latestRelistInterval);
           void this.#process(item, WatchPhase.Deleted);
         }
       }
@@ -363,6 +380,7 @@ export class Watcher<T extends GenericClass> {
 
         // Reset the retry count
         this.#retryCount = 0;
+        this.#events.emit(WatchEvent.INC_RETRY, this.#retryCount);
 
         // Listen for events and call the callback function
         this.#stream.on("data", async line => {
@@ -433,6 +451,7 @@ export class Watcher<T extends GenericClass> {
       if (this.#watchCfg.retryMax === undefined || this.#watchCfg.retryMax > this.#retryCount) {
         // Increment the retry count
         this.#retryCount++;
+        this.#events.emit(WatchEvent.INC_RETRY, this.#retryCount);
 
         if (this.#pendingReconnect) {
           // wait for the connection to be re-established
