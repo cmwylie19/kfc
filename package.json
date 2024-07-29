@@ -1,6 +1,6 @@
 {
   "name": "cw-kfc",
-  "version": "4.0.0",
+  "version": "4.0.3",
   "description": "A @kubernetes/client-node fluent API wrapper that leverages K8s Server Side Apply.",
   "bin": "./dist/cli.js",
   "main": "dist/index.js",
